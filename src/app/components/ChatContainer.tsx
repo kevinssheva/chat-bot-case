@@ -58,7 +58,7 @@ const ChatContainer = () => {
   return (
     <div className='w-full flex justify-end'>
       <ChatRecommendation />
-      <div className='w-3/4 self-end h-full flex flex-col justify-center items-center container px-[5%]'>
+      <div className='w-full lg:w-3/4 self-end h-full flex flex-col justify-center items-center container px-[5%]'>
         <Navbar />
         <div className='flex-1 w-full py-[4rem]'>
           {isLoading ? (
@@ -80,9 +80,8 @@ const ChatContainer = () => {
           )}
           <div ref={chatEndRef} /> {/* Elemen untuk scroll otomatis */}
         </div>
-        <div className='w-3/4 flex justify-center items-center py-5 px-[5%] bg-slate-100 dark:bg-stone-800 fixed bottom-0'>
-          <ChatInput handleSubmit={handleMessageSubmit} />
-        </div>
+
+        <ChatInput handleSubmit={handleMessageSubmit} />
       </div>
     </div>
   );
