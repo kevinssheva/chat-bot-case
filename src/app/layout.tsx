@@ -23,7 +23,6 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning>
       <body className={`${popins.className} bg-slate-100 dark:bg-stone-800`}>
         <Provider>
-          <Navbar />
           {children}
         </Provider>
       </body>

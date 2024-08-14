@@ -1,34 +1,24 @@
 'use client';
 
 import ChatInput from '@/components/ChatInput';
-import { useEffect, useRef, useState } from 'react';
+import { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import Chat from './Chat';
+import { MessageContext } from '../contexts/MessageContext';
+import axiosInstance from '@/axiosInstance';
+import { SyncLoader } from 'react-spinners';
+import Navbar from '@/components/Navbar';
+import ChatRecommendation from './ChatRecommendation';
 
-interface MessagesType {
-  id: number;
-  question: string;
-  answer: string;
-  createdAt: string;
-}
+const override: CSSProperties = {
+  display: 'block',
+  margin: '0 auto',
+  borderColor: 'red',
+};
 
 const ChatContainer = () => {
-  const [messages, setMessages] = useState<MessagesType[]>([]);
-
+  const { messages, addMessage, updateMessage, isLoading } =
+    useContext(MessageContext);
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const fetchChatData = async () => {
-      try {
-        const response = await fetch('http://chat-server-telkom.test/messages');
-        const data = await response.json();
-        setMessages(data);
-      } catch (error) {
-        console.error('Error fetching chat data:', error);
-      }
-    };
-
-    fetchChatData();
-  }, []);
 
   useEffect(() => {
     // Scroll ke elemen akhir chat
@@ -44,57 +34,55 @@ const ChatContainer = () => {
       createdAt: new Date().toISOString(),
     };
 
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    addMessage(newMessage);
 
-    // Kirim pesan ke backend
     try {
-      const response = await fetch('http://chat-server-telkom.test/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ question: message }),
+      const response = await axiosInstance.post('/messages', {
+        question: message,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
-
-      const data = await response.json();
-
-      // Perbarui pesan dengan respons dari backend
-      setMessages((prevMessages) =>
-        prevMessages.map((msg, index) =>
-          index === prevMessages.length - 1
-            ? { ...msg, answer: data.answer }
-            : msg
-        )
-      );
+      updateMessage({
+        ...newMessage,
+        answer: response.data.answer,
+      });
     } catch (error) {
       console.error('Error sending message:', error);
 
-      setMessages((prevMessages) =>
-        prevMessages.map((msg, index) =>
-          index === prevMessages.length - 1
-            ? { ...msg, answer: 'Error: Unable to get response' }
-            : msg
-        )
-      );
+      updateMessage({
+        ...newMessage,
+        answer: 'Failed to send message',
+      });
     }
   };
 
   return (
-    <div className='w-full max-w-2xl mx-auto h-screen flex flex-col justify-center container pt-[4.5rem]'>
-      <div className='flex-1 w-full overflow-y-auto'>
-        {messages
-          .map((msg, index) => (
-            <Chat key={index} question={msg.question} answer={msg.answer} />
-          ))}
-        <div ref={chatEndRef} /> {/* Elemen untuk scroll otomatis */}
-      </div>
-      <div className='w-full flex justify-center items-center py-5'>
-        <ChatInput handleSubmit={handleMessageSubmit} />
+    <div className='w-full flex justify-end'>
+      <ChatRecommendation />
+      <div className='w-3/4 self-end h-full flex flex-col justify-center items-center container px-[5%]'>
+        <Navbar />
+        <div className='flex-1 w-full py-[4rem]'>
+          {isLoading ? (
+            <div className='w-full h-full flex justify-center items-center'>
+              <SyncLoader
+                color='#FF0000'
+                size={10}
+                cssOverride={override}
+                aria-label='Loading Spinner'
+                data-testid='loader'
+              />
+            </div>
+          ) : (
+            <>
+              {messages.map((msg, index) => (
+                <Chat key={index} question={msg.question} answer={msg.answer} />
+              ))}
+            </>
+          )}
+          <div ref={chatEndRef} /> {/* Elemen untuk scroll otomatis */}
+        </div>
+        <div className='w-3/4 flex justify-center items-center py-5 px-[5%] bg-slate-100 dark:bg-stone-800 fixed bottom-0'>
+          <ChatInput handleSubmit={handleMessageSubmit} />
+        </div>
       </div>
     </div>
   );
